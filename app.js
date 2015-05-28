@@ -92,7 +92,7 @@ app.use('/users', users);
 
 app.post('/pollstar',function(req,res){
     if (!req.body.artist){
-
+            console.log(req.body)
             res.json({error: "no artist"})
 
     } else {
@@ -151,7 +151,7 @@ app.post('/pollstar',function(req,res){
                     res.json({error : "Artist Not Found"});
 
                 } else {
-                    
+
                     var options = {
                     uri: "https://api.import.io/store/data/b7eb19c1-ddf1-48d7-84df-063b8c0ebcc3/_query?_user=dde46b10-237e-476f-b1bb-b90be84e9996&_apikey=dde46b10-237e-476f-b1bb-b90be84e9996%3Anz8QTYhXG4dNQKI%2FEl3%2FtzQZSWMkPAQ0CC7MQn0tOhTrHTioM3gccDHweN%2FVHSMlsGyshxUmvlBmVfLmrOHG%2Bg%3D%3D",
                     method: 'POST',
