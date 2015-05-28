@@ -91,18 +91,20 @@ app.use('/', routes);
 app.use('/users', users);
 
 app.post('/pollstar',function(req,res){
-    if (!req.body.artist){
-            console.log(req.body)
+    if (req.body.token != "***REMOVED***"){
+            console.log("User not autheticated");
+            res.json({error: "no valid user token"})
+    } else if (!req.body.text || req.body.text == ""){
+            console.log("No artist specified")
             res.json({error: "no artist"})
-
     } else {
 
                 google.resultsPerPage = 25
                 var nextCounter = 0
                 var band_url = undefined
-                google("pollstar " + req.body.artist + " live dates", function (err, next, links){
+                google("pollstar " + req.body.text + " live dates", function (err, next, links){
                   if (err) console.error(err)
-                    console.log("Searching now for " + req.body.artist);
+                    console.log("Searching now for " + req.body.text);
                   for (var i = 0; i < links.length; ++i) {
                     //console.log(links[i].title + ' - ' + links[i].link) // link.href is an alias for link.link
                     //console.log(links[i].description + "\n")
