@@ -107,7 +107,7 @@ app.post('/pollstar',function(req,res){
                         }
                       }
 
-                    console.log(band_url);
+                    //console.log(band_url);
 
                     if (band_url == undefined) {
 
@@ -118,6 +118,7 @@ app.post('/pollstar',function(req,res){
                             var dates = [];
                             var city = [];
                             var venue = [];
+                            var band = ""
                             res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
                             request(band_url, function(error, response, html){
                                 if(!error){
@@ -145,11 +146,19 @@ app.post('/pollstar',function(req,res){
 
                                     })
 
-                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.user_name);
-                                    console.log("Sending to " + req.body.channel_name);
+                                    $('.schedhead').each(function(){
+                                        var data = $(this);
+                                        if (data.text().trim() != ""){
+                                            band = data.text().trim()
+                                        }
+                                    })
+
+
+                                    sendSlackIncoming(dates, city, venue, band, req.body.user_name);
+                                    console.log("Sending to " + req.body.user_name);
 
                                 } else {
-                                    res.json({error : error});
+                                    res.send("Sorry " + req.body.user_name + " something went wrong looking for " + req.body.text)
                                 }
                             })
                     }
