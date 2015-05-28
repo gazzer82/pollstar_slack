@@ -78,12 +78,12 @@ app.post('/pollstar',function(req,res){
     if (req.body.token != "***REMOVED***"){
 
             console.log("User not autheticated");
-            res.json({error: "no valid user token"})
+            res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
 
     } else if (!req.body.text || req.body.text == ""){
 
             console.log("No artist specified")
-            res.json({error: "no artist"})
+            res.send("Hey " + req.body.user_name + " you need to include a name!")
 
     } else {
                 google.resultsPerPage = 25
@@ -93,7 +93,7 @@ app.post('/pollstar',function(req,res){
                 google("pollstar " + req.body.text + " live dates", function (err, next, links){
                     if (err) {
                         console.error(err)
-                        res.json({error: "no artist"})
+                        res.send("Sorry " + req.body.user_name + " couldn't find that artist")
                         return
                     } else {
                       for (var i = 0; i < links.length; ++i) {
@@ -111,35 +111,14 @@ app.post('/pollstar',function(req,res){
 
                     if (band_url == undefined) {
 
-                        res.json({error : "Artist Not Found"});
+                        res.send("Sorry " + req.body.user_name + "couldn't find that artist")
 
                     } else {
 
-                        /*var options = {
-                        uri: "https://api.import.io/store/data/b7eb19c1-ddf1-48d7-84df-063b8c0ebcc3/_query?_user=dde46b10-237e-476f-b1bb-b90be84e9996&_apikey=dde46b10-237e-476f-b1bb-b90be84e9996%3Anz8QTYhXG4dNQKI%2FEl3%2FtzQZSWMkPAQ0CC7MQn0tOhTrHTioM3gccDHweN%2FVHSMlsGyshxUmvlBmVfLmrOHG%2Bg%3D%3D",
-                        method: 'POST',
-                        headers: {
-                        'Content-Type': 'application/json'},
-                            json: {
-                                "input": 
-                                { 
-                                    "webpage/url": band_url
-                                }
-                            }
-                        };
-
-                        request(options, function (error, response, body) {
-                            if (!error && response.statusCode == 200) {
-                                sendSlackIncoming(body, req.body.text, req.body.user_name);
-                                res.send("Fetching now, back in a minute or so!")
-                            } else {
-                                res.json({error : error});
-                            }
-
-                        });*/
                             var dates = [];
                             var city = [];
                             var venue = [];
+                            res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
                             request(band_url, function(error, response, html){
                                 if(!error){
                                     var $ = cheerio.load(html);
@@ -149,10 +128,6 @@ app.post('/pollstar',function(req,res){
                                         if (data.text().trim() != "" && data.text().trim() != "Date"){
                                             dates.push(data.text().trim())
                                         }
-                                        //release = data.children().last().children().text();
-
-                                        //json.title = title;
-                                        //json.release = release;
                                     })
 
                                     $('.city').each(function(){
@@ -160,10 +135,6 @@ app.post('/pollstar',function(req,res){
                                         if (data.text().trim() != "" && data.text().trim() != "City"){
                                             city.push(data.text().trim())
                                         }
-                                        //release = data.children().last().children().text();
-
-                                        //json.title = title;
-                                        //json.release = release;
                                     })
 
                                     $('.venue').each(function(){
@@ -171,15 +142,11 @@ app.post('/pollstar',function(req,res){
                                         if (data.text().trim() != "" && data.text().trim() != "Venue"){
                                             venue.push(data.text().trim())
                                         }
-                                        //release = data.children().last().children().text();
 
-                                        //json.title = title;
-                                        //json.release = release;
                                     })
 
                                     sendSlackIncoming(dates, city, venue, req.body.text, req.body.user_name);
                                     console.log("Sending to " + req.body.channel_name);
-                                    res.send("Fetching now, back in a minute or so!")
 
                                 } else {
                                     res.json({error : error});
@@ -192,64 +159,6 @@ app.post('/pollstar',function(req,res){
 
     }
 });
-
-
-app.get('/scrape', function(req, res){
-    if (!req.body.artist){
-
-        res.json({error: "no artist"})
-
-    } else {
-    var url2 = build_url(req.body.artist);
-    console.log(url2);
-    var band_url = ""
-
-    request(url2, function(error, response, html){
-        if(!error){
-        var $ = cheerio.load(html);
-
-
-        $('.b_attribution').each(function(i, element){
-            if (i == 0){
-            var a = $(this).children().eq(0)
-            band_url = a.text()
-            if (band_url == "Ad"){
-                a = $(this).children().eq(1)
-                band_url = a.text()
-            }
-            band_url = "http://" + band_url
-            //band_url = encodeURIComponent(band_url)
-            console.log(band_url);
-            };
-        });
-
-    }
-
-    var options = {
-        uri: "https://api.import.io/store/data/b7eb19c1-ddf1-48d7-84df-063b8c0ebcc3/_query?_user=dde46b10-237e-476f-b1bb-b90be84e9996&_apikey=dde46b10-237e-476f-b1bb-b90be84e9996%3Anz8QTYhXG4dNQKI%2FEl3%2FtzQZSWMkPAQ0CC7MQn0tOhTrHTioM3gccDHweN%2FVHSMlsGyshxUmvlBmVfLmrOHG%2Bg%3D%3D",
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        json: {
-            "input": 
-                { "webpage/url": band_url 
-            }
-        }
-    };
-
-    request(options, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        //res.json(body);
-      } else {
-        //res.json({error : error});
-      }
-
-    });
-
-    });
-    }
-})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
