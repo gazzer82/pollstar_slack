@@ -180,7 +180,7 @@ app.post('/pollstar',function(req,res){
                                     console.log(dates);
                                     console.log(city);
                                     console.log(venue);
-                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.user_name);
+                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.channel_name);
                                     res.send("Fetching now, back in a minute or so!")
 
                                 } else {
