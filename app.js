@@ -11,6 +11,8 @@ var users = require('./routes/users');
 
 var request = require('request');
 var google = require('google');
+var fs = require('fs');
+var cheerio = require('cheerio');
 
 var app = express();
 
@@ -30,18 +32,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/users', users);
 
-function sendSlackIncoming(dataArray, artist, user) {
+function sendSlackIncoming(dates, cities, venues, artist, user) {
 
     //console.log(dataArray);
     var fallback_text = artist + " dates are, "
     var dates_array = [];
-    for (i = 0; i < dataArray.results.length; i++) {
+    for (i = 0; i < dates.length; i++) {
 
-        fallback_text = fallback_text + dataArray.results[i]["venue/_text"] + " - " + dataArray.results[i]["city/_text"] + " - " + dataArray.results[i]["date"] + ", "
+        fallback_text = fallback_text + venues[i] + " - " + cities[i] + " - " + dates[i] + ", "
 
         var obj = {
-            title: dataArray.results[i]["venue/_text"] + " - " + dataArray.results[i]["city/_text"],
-            value: dataArray.results[i]["date"]
+            title: venues[i] + " - " + cities[i],
+            value: dates[i]
         }
         dates_array.push(obj);
     }
@@ -57,7 +59,7 @@ function sendSlackIncoming(dataArray, artist, user) {
                 "attachments": [
             {
                 "fallback": fallback_text,
-                "text": "Below are the current known dates for " + artist + " on Pollstar.",
+                "text": "Below are the current known dates for " + artist + " on Pollstar, first page only!",
                 "fields": dates_array,
                 "color": "#F35A00"
             }
@@ -113,7 +115,7 @@ app.post('/pollstar',function(req,res){
 
                     } else {
 
-                        var options = {
+                        /*var options = {
                         uri: "https://api.import.io/store/data/b7eb19c1-ddf1-48d7-84df-063b8c0ebcc3/_query?_user=dde46b10-237e-476f-b1bb-b90be84e9996&_apikey=dde46b10-237e-476f-b1bb-b90be84e9996%3Anz8QTYhXG4dNQKI%2FEl3%2FtzQZSWMkPAQ0CC7MQn0tOhTrHTioM3gccDHweN%2FVHSMlsGyshxUmvlBmVfLmrOHG%2Bg%3D%3D",
                         method: 'POST',
                         headers: {
@@ -129,12 +131,62 @@ app.post('/pollstar',function(req,res){
                         request(options, function (error, response, body) {
                             if (!error && response.statusCode == 200) {
                                 sendSlackIncoming(body, req.body.text, req.body.user_name);
-                                res.send()
+                                res.send("Fetching now, back in a minute or so!")
                             } else {
                                 res.json({error : error});
                             }
 
-                        });
+                        });*/
+                            var dates = [];
+                            var city = [];
+                            var venue = [];
+                            request(band_url, function(error, response, html){
+                                if(!error){
+                                    var $ = cheerio.load(html);
+
+                                    $('.daydate').each(function(){
+                                        var data = $(this);
+                                        if (data.text().trim() != "" && data.text().trim() != "Date"){
+                                            dates.push(data.text().trim())
+                                        }
+                                        //release = data.children().last().children().text();
+
+                                        //json.title = title;
+                                        //json.release = release;
+                                    })
+
+                                    $('.city').each(function(){
+                                        var data = $(this);
+                                        if (data.text().trim() != "" && data.text().trim() != "City"){
+                                            city.push(data.text().trim())
+                                        }
+                                        //release = data.children().last().children().text();
+
+                                        //json.title = title;
+                                        //json.release = release;
+                                    })
+
+                                    $('.venue').each(function(){
+                                        var data = $(this);
+                                        if (data.text().trim() != "" && data.text().trim() != "Venue"){
+                                            venue.push(data.text().trim())
+                                        }
+                                        //release = data.children().last().children().text();
+
+                                        //json.title = title;
+                                        //json.release = release;
+                                    })
+
+                                    console.log(dates);
+                                    console.log(city);
+                                    console.log(venue);
+                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.user_name);
+                                    res.send("Fetching now, back in a minute or so!")
+
+                                } else {
+                                    res.json({error : error});
+                                }
+                            })
                     }
                 }
 
