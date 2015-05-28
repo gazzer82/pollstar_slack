@@ -54,7 +54,7 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
         headers: {
         'Content-Type': 'application/json'},
             json: {
-                "channel" : "#" + user,
+                "channel" : "@" + user,
                 "username": "Pollstar",
                 "attachments": [
             {
@@ -177,7 +177,7 @@ app.post('/pollstar',function(req,res){
                                         //json.release = release;
                                     })
 
-                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.channel_name);
+                                    sendSlackIncoming(dates, city, venue, req.body.text, req.body.user_name);
                                     console.log("Sending to " + req.body.channel_name);
                                     res.send("Fetching now, back in a minute or so!")
 
