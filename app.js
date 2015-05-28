@@ -177,10 +177,8 @@ app.post('/pollstar',function(req,res){
                                         //json.release = release;
                                     })
 
-                                    console.log(dates);
-                                    console.log(city);
-                                    console.log(venue);
                                     sendSlackIncoming(dates, city, venue, req.body.text, req.body.channel_name);
+                                    console.log("Sending to " + req.body.channel_name);
                                     res.send("Fetching now, back in a minute or so!")
 
                                 } else {
