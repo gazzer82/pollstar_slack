@@ -17,6 +17,7 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+app.use('/static', express.static('public'));
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
@@ -28,6 +29,48 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+
+function sendSlackIncoming(dataArray, artist, user) {
+
+    //console.log(dataArray);
+    var fallback_text = artist + " dates are, "
+    var dates_array = [];
+    for (i = 0; i < dataArray.results.length; i++) {
+
+        fallback_text = fallback_text + dataArray.results[i]["venue/_text"] + " - " + dataArray.results[i]["city/_text"] + " - " + dataArray.results[i]["date"] + ", "
+
+        var obj = {
+            title: dataArray.results[i]["venue/_text"] + " - " + dataArray.results[i]["city/_text"],
+            value: dataArray.results[i]["date"]
+        }
+        dates_array.push(obj);
+    }
+
+    var options = {
+        uri: "https://hooks.slack.com/services/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",
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'},
+            json: {
+                "channel" : "@" + user,
+                "username": "Pollstar",
+                "attachments": [
+            {
+                "fallback": fallback_text,
+                "text": "Below are the current known dates for " + artist + " on Pollstar.",
+                "fields": dates_array,
+                "color": "#F35A00"
+            }
+        ]
+            }
+        };
+
+        request(options, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                console.log(error)
+            }
+        });
+}
 
 app.post('/pollstar',function(req,res){
     if (req.body.token != "***REMOVED***"){
@@ -85,7 +128,8 @@ app.post('/pollstar',function(req,res){
 
                         request(options, function (error, response, body) {
                             if (!error && response.statusCode == 200) {
-                                res.json(body);
+                                sendSlackIncoming(body, req.body.text, req.body.user_name);
+                                res.send()
                             } else {
                                 res.json({error : error});
                             }
@@ -146,9 +190,9 @@ app.get('/scrape', function(req, res){
 
     request(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        //res.json(body);
       } else {
-        res.json({error : error});
+        //res.json({error : error});
       }
 
     });
