@@ -111,7 +111,7 @@ app.post('/pollstar',function(req,res){
 
                     if (band_url == undefined) {
 
-                        res.send("Sorry " + req.body.user_name + "couldn't find that artist")
+                        res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text)
 
                     } else {
 
