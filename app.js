@@ -54,7 +54,7 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
         headers: {
         'Content-Type': 'application/json'},
             json: {
-                "channel" : "@" + user,
+                "channel" : user,
                 "username": "Pollstar",
                 "attachments": [
             {
