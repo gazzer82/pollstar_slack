@@ -81,10 +81,17 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
 function getDates (artistID, artist, user) {
 
             var request = require('request');
+
+            var date = new Date();
+            var day = ("0" + date.getDate()).slice(-2)
+            var month = ("0" + (date.getMonth() + 1)).slice(-2)
+            var year = date.getFullYear(); 
+            var formattedDate = month + "/" + day + "/" + year
+            console.log(formattedDate)
             request.post({
               headers: {'content-type' : 'application/x-www-form-urlencoded'},
               url:     'http://data.pollstar.com/api/pollstar.asmx/ArtistEvents',
-              body:    "apiKey=***REMOVED***&artistID=" + artistID + "&startDate=" + "05/29/2015" + "&dayCount=365&page=0&pageSize=365"
+              body:    "apiKey=***REMOVED***&artistID=" + artistID + "&startDate=" + formattedDate + "&dayCount=365&page=0&pageSize=365"
             }, function(error, response, body){
                 parseString(body, function (err, result) {
                     //console.log(result.SearchResults.Artists);
