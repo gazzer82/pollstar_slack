@@ -13,6 +13,8 @@ var request = require('request');
 var google = require('google');
 var fs = require('fs');
 var cheerio = require('cheerio');
+var parseString = require('xml2js').parseString;
+var util = require('util');
 
 var app = express();
 
@@ -59,7 +61,7 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
                 "attachments": [
             {
                 "fallback": fallback_text,
-                "text": "Below are the current known dates for " + artist + " on Pollstar, first page only!",
+                "text": "Below are the current known dates for " + artist + " on Pollstar.",
                 "fields": dates_array,
                 "color": "#F35A00"
             }
@@ -70,9 +72,49 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
         request(options, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 console.log(error)
+            } else {
+                //console.log("Sent to Slack : " + util.inspect(options, false, null))
             }
         });
 }
+
+function getDates (artistID, artist, user) {
+
+            var request = require('request');
+            request.post({
+              headers: {'content-type' : 'application/x-www-form-urlencoded'},
+              url:     'http://data.pollstar.com/api/pollstar.asmx/ArtistEvents',
+              body:    "apiKey=***REMOVED***&artistID=" + artistID + "&startDate=" + "05/29/2015" + "&dayCount=365&page=0&pageSize=365"
+            }, function(error, response, body){
+                parseString(body, function (err, result) {
+                    //console.log(result.SearchResults.Artists);
+                    //console.log(util.inspect(result.ArtistInfo.Events[0].Event[0], false, null));
+                    var dates = [];
+                    var region = [];
+                    var venue = [];
+                    var band = artist
+                    //console.log(user)
+                    //var user = user
+
+                    for (var i = 0; i < result.ArtistInfo.Events[0].Event.length; i++) {
+                        //console.log(util.inspect(result.ArtistInfo.Events[0].Event[i].$.VenueName, false, null));
+                        //console.log(util.inspect(result.ArtistInfo.Events[0].Event[i].$.Region, false, null));
+                        //console.log(util.inspect(result.ArtistInfo.Events[0].Event[i].$.PlayDate, false, null));
+                        dates.push(result.ArtistInfo.Events[0].Event[i].$.PlayDate.trim().replace(/'/g, " ")),
+                        region.push(result.ArtistInfo.Events[0].Event[i].$.Region.trim().replace(/'/g, " ")),
+                        venue.push(result.ArtistInfo.Events[0].Event[i].$.VenueName.trim().replace(/'/g, " "))
+
+                    }
+
+                //},
+
+                    sendSlackIncoming(dates, region, venue, band, user)
+
+                });
+            });
+
+}
+
 
 app.post('/pollstar',function(req,res){
     if (req.body.token != "***REMOVED***"){
@@ -85,8 +127,88 @@ app.post('/pollstar',function(req,res){
             console.log("No artist specified")
             res.send("Hey " + req.body.user_name + " you need to include a name!")
 
-    } else {
-                google.resultsPerPage = 25
+    } else {    
+
+            console.log("Searching now for " + req.body.text);
+            var bandID = undefined;
+            var artists = ""
+            /*var options = {
+                uri: "http://data.pollstar.com/api/pollstar.asmx/Search",
+                method: 'POST',
+                headers: {
+                //'Content-Type': 'application/json'
+                },
+                postData: {
+                    mimeType: 'application/x-www-form-urlencoded',
+                    params: [
+                      {
+                        name: 'apiKey',
+                        value: '***REMOVED***'
+                      },
+                      {
+                        name: 'searchText',
+                        value: 'Kings of Leon'
+                      }
+                    ]
+                  }
+            };
+
+            console.log(options);
+
+            request(options, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    console.log(error)
+                } else {
+                    console.log(body)
+                }
+            });*/
+
+
+            var request = require('request');
+            request.post({
+              headers: {'content-type' : 'application/x-www-form-urlencoded'},
+              url:     'http://data.pollstar.com/api/pollstar.asmx/Search',
+              body:    "apiKey=***REMOVED***&searchText=" + req.body.text
+            }, function(error, response, body){
+                parseString(body, function (err, result) {
+                    //console.log(result.SearchResults.Artists);
+                    //console.log(util.inspect(result.SearchResults.Artists[0].Artist, false, null));
+                    for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
+                        //console.log(util.inspect(result.SearchResults.Artists[0].Artist[i].$.ListName, false, null));
+                        if (i < result.SearchResults.Artists[0].Artist.length - 1) {
+                            //console.log(result.SearchResults.Artists[0].Artist.length)
+                            //console.log(i)
+                            artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
+                        } else {
+                            artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
+                        }
+
+                        if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
+                            console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
+                            bandID = result.SearchResults.Artists[0].Artist[i].$.ID
+                            break
+                        }
+                    }
+
+                    if (bandID == undefined) {
+
+                        res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text + " where you looking for " + artists)
+
+                    } else {
+
+                        res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
+                        getDates(bandID, req.body.text, req.body.user_name);
+
+                    }
+                });
+            });
+
+        }
+
+
+
+                /*
+                //google.resultsPerPage = 25
                 var nextCounter = 0
                 var band_url = undefined
                 console.log("Searching now for " + req.body.text);
@@ -106,8 +228,10 @@ app.post('/pollstar',function(req,res){
                             }
                         }
                       }
-
+                    
                     //console.log(band_url);
+
+
 
                     if (band_url == undefined) {
 
@@ -162,11 +286,11 @@ app.post('/pollstar',function(req,res){
                                 }
                             })
                     }
-                }
+                */
+                //}
 
-            })
+            //})
 
-    }
 });
 
 // catch 404 and forward to error handler
