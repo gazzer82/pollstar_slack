@@ -79,19 +79,22 @@ function getDates (artistID, artist, user) {
 
             var request = require('request');
             var date = new Date();
-            var day = ("0" + date.getDate()).slice(-2)
-            if (day > 0) {
-                day = day - 1
-            }
+            date.setDate(date.getDate()-1);
+            console.log(date);
+            var day = ('0' + date.getDate()).slice(-2)
             var month = ("0" + (date.getMonth() + 1)).slice(-2)
             var year = date.getFullYear(); 
             var formattedDate = month + "/" + day + "/" + year
             request.post({
               headers: {'content-type' : 'application/x-www-form-urlencoded'},
               url:     'http://data.pollstar.com/api/pollstar.asmx/ArtistEvents',
-              body:    "apiKey=***REMOVED***&artistID=" + artistID + "&startDate=" + formattedDate + "&dayCount=365&page=0&pageSize=365"
+              body:    "apiKey=***REMOVED***&artistID=" + artistID.trim() + "&startDate=" + formattedDate.trim() + "&dayCount=365&page=0&pageSize=365"
             }, function(error, response, body){
-                parseString(body, function (err, result) {
+                var cleanedBody = body.replace("\ufeff", "");
+                parseString(cleanedBody, function (err, result) {
+                    if(err){
+                        console.log('Error Parsing Dates Response: ' + err);
+                    } else {
                     var dates = [];
                     var region = [];
                     var venue = [];
@@ -104,6 +107,7 @@ function getDates (artistID, artist, user) {
 
                     }
                     sendSlackIncoming(dates, region, venue, band, user)
+                }
                 });
             });
 
@@ -132,19 +136,24 @@ app.post('/pollstar',function(req,res){
               url:     'http://data.pollstar.com/api/pollstar.asmx/Search',
               body:    "apiKey=***REMOVED***&searchText=" + req.body.text
             }, function(error, response, body){
-                parseString(body, function (err, result) {
-                    if (result.SearchResults.Artists[0].Artist){    
-                        for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
-                            if (i < result.SearchResults.Artists[0].Artist.length - 1) {
-                                artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
-                            } else {
-                                artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
-                            }
+                var cleanedBody = body.replace("\ufeff", "");
+                parseString(cleanedBody, function (err, result) {
+                    if (err){
+                        console.log("Error parsing artist list respone: " + err);
+                    } else {
+                        if (result.SearchResults.Artists[0].Artist){    
+                            for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
+                                if (i < result.SearchResults.Artists[0].Artist.length - 1) {
+                                    artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
+                                } else {
+                                    artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
+                                }
 
-                            if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
-                                console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
-                                bandID = result.SearchResults.Artists[0].Artist[i].$.ID
-                                break
+                                if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
+                                    console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
+                                    bandID = result.SearchResults.Artists[0].Artist[i].$.ID
+                                    break
+                                }
                             }
                         }
                     }
