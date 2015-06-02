@@ -80,7 +80,6 @@ function getDates (artistID, artist, user) {
             var request = require('request');
             var date = new Date();
             date.setDate(date.getDate()-1);
-            console.log(date);
             var day = ('0' + date.getDate()).slice(-2)
             var month = ("0" + (date.getMonth() + 1)).slice(-2)
             var year = date.getFullYear(); 
@@ -115,7 +114,6 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-    console.log()
     if (req.body.token != process.env.SLACK_KEY){
 
             console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY );
