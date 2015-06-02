@@ -1,7 +1,10 @@
-langauge: node_js
+# Language setting
+language: node_js
+
+# Version number
 node_js:
   - 0.12.4
 
 after_success:
   - if [ "$BRANCH" == "master" ];then git remote add dokku dokku@dcloud.space:pollstar; fi
-  - if [ "$BRANCH" == "master" ]; then git push dokku master; fi
+  - if [ "$BRANCH" == "master" ];then git push dokku master; fi
