@@ -115,7 +115,7 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-    if (req.body.token != "***REMOVED***"){
+    if (req.body.token != process.env.ENV_VARIABLE){
 
             console.log("User not autheticated");
             res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
