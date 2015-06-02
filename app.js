@@ -87,7 +87,7 @@ function getDates (artistID, artist, user) {
             request.post({
               headers: {'content-type' : 'application/x-www-form-urlencoded'},
               url:     'http://data.pollstar.com/api/pollstar.asmx/ArtistEvents',
-              body:    "apiKey=***REMOVED***&artistID=" + artistID.trim() + "&startDate=" + formattedDate.trim() + "&dayCount=365&page=0&pageSize=365"
+              body:    "apiKey=" + process.env.POLLSTAR_KEY + "&artistID=" + artistID.trim() + "&startDate=" + formattedDate.trim() + "&dayCount=365&page=0&pageSize=365"
             }, function(error, response, body){
                 var cleanedBody = body.replace("\ufeff", "");
                 parseString(cleanedBody, function (err, result) {
@@ -114,67 +114,70 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-    if (req.body.token != process.env.SLACK_KEY){
+    if(process.env.SLACK_KEY && process.env.POLLSTAR_KEY) {
+        if (req.body.token != process.env.SLACK_KEY){
 
-            console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY );
-            res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
+                console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY );
+                res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
 
-    } else if (!req.body.text || req.body.text == ""){
+        } else if (!req.body.text || req.body.text == ""){
 
-            console.log("No artist specified")
-            res.send("Hey " + req.body.user_name + " you need to include a name!")
+                console.log("No artist specified")
+                res.send("Hey " + req.body.user_name + " you need to include a name!")
 
-    } else {    
+        } else {    
 
-            console.log("Searching now for " + req.body.text);
-            var bandID = undefined;
-            var artists = ""
-            var request = require('request');
-            request.post({
-              headers: {'content-type' : 'application/x-www-form-urlencoded'},
-              url:     'http://data.pollstar.com/api/pollstar.asmx/Search',
-              body:    "apiKey=***REMOVED***&searchText=" + req.body.text
-            }, function(error, response, body){
-                var cleanedBody = body.replace("\ufeff", "");
-                parseString(cleanedBody, function (err, result) {
-                    if (err){
-                        console.log("Error parsing artist list respone: " + err);
-                    } else {
-                        if (result.SearchResults.Artists[0].Artist){    
-                            for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
-                                if (i < result.SearchResults.Artists[0].Artist.length - 1) {
-                                    artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
-                                } else {
-                                    artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
-                                }
+                console.log("Searching now for " + req.body.text);
+                var bandID = undefined;
+                var artists = ""
+                var request = require('request');
+                request.post({
+                  headers: {'content-type' : 'application/x-www-form-urlencoded'},
+                  url:     'http://data.pollstar.com/api/pollstar.asmx/Search',
+                  body:    "apiKey=26313-8626263&searchText=" + req.body.text
+                }, function(error, response, body){
+                    var cleanedBody = body.replace("\ufeff", "");
+                    parseString(cleanedBody, function (err, result) {
+                        if (err){
+                            console.log("Error parsing artist list respone: " + err);
+                        } else {
+                            if (result.SearchResults.Artists[0].Artist){    
+                                for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
+                                    if (i < result.SearchResults.Artists[0].Artist.length - 1) {
+                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
+                                    } else {
+                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
+                                    }
 
-                                if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
-                                    console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
-                                    bandID = result.SearchResults.Artists[0].Artist[i].$.ID
-                                    break
+                                    if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
+                                        console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
+                                        bandID = result.SearchResults.Artists[0].Artist[i].$.ID
+                                        break
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (bandID == undefined) {
-                        if (artists == ""){
-                            res.send("Sorry " + req.body.user_name + " couldn't find an artist matching " + req.body.text)
+                        if (bandID == undefined) {
+                            if (artists == ""){
+                                res.send("Sorry " + req.body.user_name + " couldn't find an artist matching " + req.body.text)
+                            } else {
+                                res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text + " where you looking for " + artists)
+                            }
+
                         } else {
-                            res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text + " where you looking for " + artists)
+
+                            res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
+                            getDates(bandID, req.body.text, req.body.user_name);
+
                         }
-
-                    } else {
-
-                        res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
-                        getDates(bandID, req.body.text, req.body.user_name);
-
-                    }
+                    });
                 });
-            });
 
+            }
+        } else {
+            console.log("API Key or Slack Key not set.")
         }
-
 });
 
 // catch 404 and forward to error handler
