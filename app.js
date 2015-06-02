@@ -115,9 +115,10 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
+    console.log()
     if (req.body.token != process.env.SLACK_KEY){
 
-            console.log("User not autheticated");
+            console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY);
             res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
 
     } else if (!req.body.text || req.body.text == ""){
