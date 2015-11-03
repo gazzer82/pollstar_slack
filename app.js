@@ -18,6 +18,13 @@ var util = require('util');
 
 var app = express();
 
+var slackKeys = process.env.POLLSTAR_KEYS.split(',');
+var outgoingURLS = process.env.OUTGOING_URLS.split(',');
+
+var teamid = 0;
+
+var incoming = '';
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -36,21 +43,22 @@ app.use('/users', users);
 
 function sendSlackIncoming(dates, cities, venues, artist, user) {
 
-    var fallback_text = artist + " dates are, "
+    var fallback_text = artist + " dates are, ";
     var dates_array = [];
     for (i = 0; i < dates.length; i++) {
 
-        fallback_text = fallback_text + venues[i] + " - " + cities[i] + " - " + dates[i] + ", "
+        fallback_text = fallback_text + venues[i] + " - " + cities[i] + " - " + dates[i] + ", ";
 
         var obj = {
             title: venues[i] + " - " + cities[i],
             value: dates[i]
-        }
+        };
         dates_array.push(obj);
     }
 
     var options = {
-        uri: "https://hooks.slack.com/services/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",
+        //uri: "https://hooks.slack.com/services/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",
+        uri: outgoingURLS[teamid],
         method: 'POST',
         headers: {
         'Content-Type': 'application/json'},
@@ -70,7 +78,7 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
 
         request(options, function (error, response, body) {
             if (!error && response.statusCode == 200) {
-                console.log(error)
+                console.log(error);
             }
         });
 }
@@ -80,10 +88,10 @@ function getDates (artistID, artist, user) {
             var request = require('request');
             var date = new Date();
             date.setDate(date.getDate()-1);
-            var day = ('0' + date.getDate()).slice(-2)
-            var month = ("0" + (date.getMonth() + 1)).slice(-2)
+            var day = ('0' + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
             var year = date.getFullYear(); 
-            var formattedDate = month + "/" + day + "/" + year
+            var formattedDate = month + "/" + day + "/" + year;
             request.post({
               headers: {'content-type' : 'application/x-www-form-urlencoded'},
               url:     'http://data.pollstar.com/api/pollstar.asmx/ArtistEvents',
@@ -97,15 +105,15 @@ function getDates (artistID, artist, user) {
                     var dates = [];
                     var region = [];
                     var venue = [];
-                    var band = artist
+                    var band = artist;
 
                     for (var i = 0; i < result.ArtistInfo.Events[0].Event.length; i++) {
                         dates.push(result.ArtistInfo.Events[0].Event[i].$.PlayDate.trim().replace(/'/g, " ")),
                         region.push(result.ArtistInfo.Events[0].Event[i].$.Region.trim().replace(/'/g, " ")),
-                        venue.push(result.ArtistInfo.Events[0].Event[i].$.VenueName.trim().replace(/'/g, " "))
+                        venue.push(result.ArtistInfo.Events[0].Event[i].$.VenueName.trim().replace(/'/g, " "));
 
                     }
-                    sendSlackIncoming(dates, region, venue, band, user)
+                    sendSlackIncoming(dates, region, venue, band, user);
                 }
                 });
             });
@@ -114,23 +122,26 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-    if(process.env.SLACK_KEY && process.env.POLLSTAR_KEY) {
-        if (req.body.token != process.env.SLACK_KEY){
+
+    if(process.env.SLACK_KEY && process.env.POLLSTAR_KEYS) {
+
+        if (slackKeys.indexOf(req.body.token) !== -1){
 
                 console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY );
-                res.send("Sorry doesn't seem lilke you're on the up and up, no token!")
+                res.send("Sorry doesn't seem like you're on the up and up, no token!");
 
-        } else if (!req.body.text || req.body.text == ""){
+        } else if (!req.body.text || req.body.text === ""){
 
-                console.log("No artist specified")
-                res.send("Hey " + req.body.user_name + " you need to include a name!")
+                console.log("No artist specified");
+                res.send("Hey " + req.body.user_name + " you need to include an artist name!");
 
         } else {    
 
                 console.log("Searching now for " + req.body.text);
-                var bandID = undefined;
-                var artists = ""
+                var bandID;
+                var artists = "";
                 var request = require('request');
+                teamid = slackKeys.indexOf(req.body.token);
                 request.post({
                   headers: {'content-type' : 'application/x-www-form-urlencoded'},
                   url:     'http://data.pollstar.com/api/pollstar.asmx/Search',
@@ -144,30 +155,30 @@ app.post('/pollstar',function(req,res){
                             if (result.SearchResults.Artists[0].Artist){    
                                 for (var i = 0; i < result.SearchResults.Artists[0].Artist.length; i++) {
                                     if (i < result.SearchResults.Artists[0].Artist.length - 1) {
-                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", "
+                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName + ", ";
                                     } else {
-                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName
+                                        artists = artists + result.SearchResults.Artists[0].Artist[i].$.ListName;
                                     }
 
                                     if (result.SearchResults.Artists[0].Artist[i].$.ListName.toLowerCase() == req.body.text.toLowerCase()){
                                         console.log("Found it! - " + result.SearchResults.Artists[0].Artist[i].$.Url);
-                                        bandID = result.SearchResults.Artists[0].Artist[i].$.ID
-                                        break
+                                        bandID = result.SearchResults.Artists[0].Artist[i].$.ID;
+                                        break;
                                     }
                                 }
                             }
                         }
 
-                        if (bandID == undefined) {
-                            if (artists == ""){
-                                res.send("Sorry " + req.body.user_name + " couldn't find an artist matching " + req.body.text)
+                        if (bandID === undefined) {
+                            if (artists === ""){
+                                res.send("Sorry " + req.body.user_name + " couldn't find an artist matching " + req.body.text);
                             } else {
-                                res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text + " where you looking for " + artists)
+                                res.send("Sorry " + req.body.user_name + " couldn't find " + req.body.text + " where you looking for " + artists);
                             }
 
                         } else {
 
-                            res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!")
+                            res.send("Ok " + req.body.user_name + " I've found " + req.body.text + " compiling dates, back shortly!");
                             getDates(bandID, req.body.text, req.body.user_name);
 
                         }
@@ -176,7 +187,7 @@ app.post('/pollstar',function(req,res){
 
             }
         } else {
-            console.log("API Key or Slack Key not set.")
+            console.log("API Key or Slack Key not set.");
         }
 });
 
