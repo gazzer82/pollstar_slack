@@ -133,7 +133,7 @@ function getDates (artistID, artist, user) {
 
 app.post('/pollstar',function(req,res){
 
-    if(process.env.SLACK_KEY && process.env.POLLSTAR_KEYS) {
+    if(process.env.POLLSTAR_KEY) {
 
         if (slackKeys.indexOf(req.body.token) !== -1){
 
