@@ -5,6 +5,10 @@ language: node_js
 node_js:
   - 0.12.4
 
+#enable caching to speed up the build process
+cache: true
+
+#deploy the app
 after_success:
   - if [ "$BRANCH" == "master" ];then git remote add dokku dokku@dcloud.space:pollstar; fi
   - if [ "$BRANCH" == "master" ];then git push dokku master; fi
