@@ -26,6 +26,8 @@ if(!process.env.SLACK_KEYS){
 
 var slackKeys = process.env.SLACK_KEYS.split(',');
 var outgoingURLS = process.env.OUTGOING_URLS.split(',');
+console.log('Slack Keys: ' + slackKeys);
+console.log('Outgoing URLs: ' + outgoingURLS);
 
 var teamid = 0;
 
@@ -82,7 +84,7 @@ function sendSlackIncoming(dates, cities, venues, artist, user) {
         ]
             }
         };
-
+        console.log('Senging request back to ' + outgoingURLS[teamid]);
         request(options, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 console.log(error);
@@ -120,6 +122,7 @@ function getDates (artistID, artist, user) {
                         venue.push(result.ArtistInfo.Events[0].Event[i].$.VenueName.trim().replace(/'/g, " "));
 
                     }
+                    console.log('Dates fetched from Pollstar');
                     sendSlackIncoming(dates, region, venue, band, user);
                 }
                 });
