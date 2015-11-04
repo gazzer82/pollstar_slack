@@ -5,3 +5,4 @@ npm-debug.log
 /certs
 /ssl
 /tls
+env.js

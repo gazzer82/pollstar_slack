@@ -18,12 +18,19 @@ var util = require('util');
 
 var app = express();
 
+//Check to see if we're running locally or not, if so load ENV variables from file
+
+if(!process.env.POLLSTAR_KEYS){
+	require('./env.js');
+}
+
 var slackKeys = process.env.POLLSTAR_KEYS.split(',');
 var outgoingURLS = process.env.OUTGOING_URLS.split(',');
 
 var teamid = 0;
 
 var incoming = '';
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
