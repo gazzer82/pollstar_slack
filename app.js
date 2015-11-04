@@ -134,10 +134,10 @@ function getDates (artistID, artist, user) {
 app.post('/pollstar',function(req,res){
 
     if(process.env.POLLSTAR_KEY) {
-
+    	console.log('key location ' + slackKeys.indexOf(req.body.token));
         if (slackKeys.indexOf(req.body.token) !== -1){
 
-                console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + process.env.SLACK_KEY );
+                console.log("User not autheticated, sent key: " + req.body.token + " Was looking for: " + slackKeys);
                 res.send("Sorry doesn't seem like you're on the up and up, no token!");
 
         } else if (!req.body.text || req.body.text === ""){
