@@ -20,11 +20,11 @@ var app = express();
 
 //Check to see if we're running locally or not, if so load ENV variables from file
 
-if(!process.env.POLLSTAR_KEYS){
+if(!process.env.SLACK_KEYS){
 	require('./env.js');
 }
 
-var slackKeys = process.env.POLLSTAR_KEYS.split(',');
+var slackKeys = process.env.SLACK_KEYS.split(',');
 var outgoingURLS = process.env.OUTGOING_URLS.split(',');
 
 var teamid = 0;
