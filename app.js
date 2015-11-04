@@ -26,8 +26,6 @@ if(!process.env.SLACK_KEYS){
 
 var slackKeys = process.env.SLACK_KEYS.split(',');
 var outgoingURLS = process.env.OUTGOING_URLS.split(',');
-console.log('Slack Keys: ' + slackKeys);
-console.log('Outgoing URLs: ' + outgoingURLS);
 
 var teamid = 0;
 
@@ -134,8 +132,8 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-	console.log(process.env.SLACK_KEYS.split(','));
-	console.log(process.env.OUTGOING_URLS.split(','));
+	slackKeys = process.env.SLACK_KEYS.split(',');
+	outgoingURLS = process.env.OUTGOING_URLS.split(',');
     if(process.env.POLLSTAR_KEY) {
     	console.log('key location ' + slackKeys.indexOf(req.body.token));
         if (slackKeys.indexOf(req.body.token) !== -1){
