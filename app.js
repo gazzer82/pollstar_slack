@@ -34,6 +34,8 @@ var teamid = 0;
 var incoming = '';
 
 
+
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -132,7 +134,8 @@ function getDates (artistID, artist, user) {
 
 
 app.post('/pollstar',function(req,res){
-
+	console.log(process.env.SLACK_KEYS.split(','));
+	console.log(process.env.OUTGOING_URLS.split(','));
     if(process.env.POLLSTAR_KEY) {
     	console.log('key location ' + slackKeys.indexOf(req.body.token));
         if (slackKeys.indexOf(req.body.token) !== -1){
